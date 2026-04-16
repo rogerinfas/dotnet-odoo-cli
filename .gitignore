@@ -1,0 +1,17 @@
+# Build and release folders
+bin/
+obj/
+
+# Rider / Visual Studio / VSCode
+.idea/
+.vs/
+.vscode/
+*.user
+
+# Config / Secrets
+appsettings.json
+appsettings.Development.json
+appsettings.Production.json
+
+# Pero no ignorar el demo
+!appsettings.example.json
