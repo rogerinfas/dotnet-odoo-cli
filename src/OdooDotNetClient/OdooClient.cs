@@ -4,37 +4,32 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Microsoft.Extensions.Options;
 
-namespace DotnetOdooCli
+namespace OdooDotNetClient
 {
-    public class OdooClient
+    public class OdooClient : IOdooClient
     {
         private readonly HttpClient _httpClient;
-        private readonly string _url;
-        private readonly string _db;
-        private readonly string _user;
-        private readonly string _password;
+        private readonly OdooOptions _options;
 
-        public OdooClient(string url, string db, string user, string password)
+        public OdooClient(HttpClient httpClient, IOptions<OdooOptions> options)
         {
-            _url = url;
-            _db = db;
-            _user = user;
-            _password = password;
-            _httpClient = new HttpClient();
+            _httpClient = httpClient;
+            _options = options.Value;
         }
 
         public async Task<int?> AuthenticateAsync()
         {
-            string commonEndpoint = $"{_url.TrimEnd('/')}/xmlrpc/2/common";
+            string commonEndpoint = $"{_options.Url.TrimEnd('/')}/xmlrpc/2/common";
             
             string xmlPayload = $@"<?xml version=""1.0""?>
 <methodCall>
   <methodName>authenticate</methodName>
   <params>
-    <param><value><string>{_db}</string></value></param>
-    <param><value><string>{_user}</string></value></param>
-    <param><value><string>{_password}</string></value></param>
+    <param><value><string>{_options.Db}</string></value></param>
+    <param><value><string>{_options.User}</string></value></param>
+    <param><value><string>{_options.Password}</string></value></param>
     <param><value><struct></struct></value></param>
   </params>
 </methodCall>";
@@ -49,7 +44,6 @@ namespace DotnetOdooCli
                 var responseXml = await response.Content.ReadAsStringAsync();
                 var xdoc = XDocument.Parse(responseXml);
 
-                // Odoo returns an int if successful, or a boolean false if auth fails.
                 var valueElement = xdoc.Descendants("value").FirstOrDefault();
                 if (valueElement != null)
                 {
@@ -60,7 +54,7 @@ namespace DotnetOdooCli
                     }
                 }
                 
-                return null; // Auth failed or invalid response
+                return null;
             }
             catch (Exception ex)
             {
